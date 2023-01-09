@@ -1,8 +1,0 @@
-{
-"type": "FeatureCollection",
-"name": "esribound",
-"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
-"features": [
-{ "type": "Feature", "properties": { "Name": "", "description": "", "timestamp": null, "begin": null, "end": null, "altitudeMode": null, "tessellate": -1, "extrude": 0, "visibility": -1, "drawOrder": null, "icon": null, "image": "", "color": "" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 31.997681, 35.8935 ], [ 35.073853, 35.969115 ], [ 35.178223, 34.257216 ], [ 31.772461, 34.1209 ], [ 31.712036, 35.929093 ], [ 31.997681, 35.8935 ] ] ] } }
-]
-}
