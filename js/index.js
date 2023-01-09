@@ -1,6 +1,8 @@
 
 
-
+        $("#nearestfunction").show();
+            $("#voronoifunction").show();
+            $("#pathnetworkfunction").show();
 
 
 let selLayer;
@@ -352,9 +354,7 @@ let maploadcallBack = function maploadcallBack() {
 
             console.log('./js/path.js loaded');
 
-            $("#nearestfunction").show();
-            $("#voronoifunction").show();
-            $("#pathnetworkfunction").show();
+    
 
 
 
