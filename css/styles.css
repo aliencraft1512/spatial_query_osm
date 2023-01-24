@@ -538,7 +538,7 @@ box-shadow: 0 1px 7px rgba(6, 4, 4, 0.65)!important;
    border: 1px solid #352727;
   background-color: #fdfdfd;
   position: sticky;
-width: 100px;
+width: 135px;
 }
 
 
@@ -610,7 +610,7 @@ background-color: rgb(205, 223, 227); /* rgba(0, 0, 0, .2);*/
 color: white;
 font: white!important;
  height: auto;
- width: 215px!important;
+ width: 290px!important;
  border: 1px solid #cdc7c7;
 
 /*z-index:1600;*/
