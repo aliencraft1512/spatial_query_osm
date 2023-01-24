@@ -4890,11 +4890,13 @@ L.HeatLayer = (L.Layer ? L.Layer : L.Class).extend({
         }
 
         if (this.options.pane) {
-            this.getPane("georeference_pane").appendChild(this._canvas);
-        }else{
-           // map._panes.overlayPane.appendChild(this._canvas);
+            //this.getPane("georeference_pane").appendChild(this._canvas);
 			
-			this.getPane("georeference_pane").appendChild(this._canvas);
+			     map._panes.overlayPane.appendChild(this._canvas);
+        }else{
+            map._panes.overlayPane.appendChild(this._canvas);
+			
+			//this.getPane("georeference_pane").appendChild(this._canvas);
         }
 
         map.on('moveend', this._reset, this);
@@ -4908,7 +4910,8 @@ L.HeatLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     onRemove: function (map) {
         if (this.options.pane) {
-            this.getPane("georeference_pane").removeChild(this._canvas);
+            //this.getPane("georeference_pane").removeChild(this._canvas);
+			  map.getPanes().overlayPane.removeChild(this._canvas);
         }else{
             map.getPanes().overlayPane.removeChild(this._canvas);
         }
@@ -25454,7 +25457,7 @@ module.exports = L.Routing = {
 				opacity: 1,
 				fillOpacity: 0.7
 			},
-			summaryTemplate: '<h2>{name}</h2><h3>{distance}, {time}</h3>',
+			summaryTemplate: '<h2>{name}</h2><h3 id= "namealtid">{distance}, {time}</h3>',
 			timeTemplate: '{time}',
 			containerClassName: '',
 			alternativeClassName: '',
@@ -25557,8 +25560,12 @@ module.exports = L.Routing = {
 			L.DomEvent.addListener(altDiv, 'click', this._onAltClicked, this);
 			this.on('routeselected', this._selectAlt, this);
 
+       
+	
+
 			altDiv.appendChild(this._createItineraryContainer(alt));
 			return altDiv;
+
 		},
 
 		_clearAlts: function() {
@@ -25660,6 +25667,14 @@ module.exports = L.Routing = {
 				delete this._marker;
 			}
 			this.fire('routeselected', routes);
+	
+
+   $("#namealtid")
+        .fadeOut(100)
+        .fadeIn(100).fadeOut(100)
+        .fadeIn(100);
+
+	
 		}
 	});
 })();
@@ -25680,7 +25695,7 @@ module.exports = L.Routing = {
 				{color: 'black', opacity: 0.15, weight: 9}, ///εδω πρεπει να αλλαξω κ'α'τι
 				{color: 'white', opacity: 0.8, weight: 6},
 				//{color: 'red', opacity: 1, weight: 2}
-				{color: 'yellow', opacity: 1, weight: 2}
+				{color: 'red', opacity: 1, weight: 2}
 			],
 			missingRouteStyles: [
 				{color: 'black', opacity: 0.15, weight: 7},
@@ -25708,7 +25723,10 @@ module.exports = L.Routing = {
 		},
 
 		getBounds: function() {
-			return L.latLngBounds(this._route.coordinates);
+
+			
+			return L.latLngBounds(this._route.coordinates); //εγώ το εβγαλα προσωρινα
+
 		},
 
 		_findWaypointIndices: function() {
@@ -27773,3 +27791,25 @@ var nearest = function(targetPoint, points){
 	
 	
 /// path.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

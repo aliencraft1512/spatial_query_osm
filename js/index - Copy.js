@@ -74,9 +74,6 @@ let voronoiPolygons;
 let voronoipointTempLayer;
 let topojsonnamearray = [];
 
-var heatlayer;
-var heatmapcontrol;
-
 //////////////////////////network path geojson oath finder analysis/////////////////
 let cleanednetworkarray = [];
 let bbox;
@@ -105,7 +102,7 @@ var overlayLayers = {
 
 
 let overpassbound = new L.GeoJSON.AJAX(
-    "https://raw.githubusercontent.com/aliencraft1512/spatial_query_osm/main/data/cyprusbound/overpassbound.geojson", {
+    "./data/cyprusbound/overpassbound.geojson", {
         style: {
             opacity: 0,
             fillOpacity: 0
@@ -217,7 +214,11 @@ googleterain.crs = L.CRS.EPSG3857; /////////////////////////////////////////////
 
 
 
-
+sidebar = L.control.sidebar("sidebar", {
+    autoPan: false,
+    closeButton: true
+});
+sidebar.addTo(map);
 
 let sidebar2 = L.control.sidebar("sidebars", {
     autoPan: false,
@@ -232,12 +233,12 @@ sidebar2.show();
 
 
 function opentab(evt, tabname) {
-
+    sidebar.hide();
     let i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
     for (i = 0; i < tabcontent.length; i++) {
         tabcontent[i].style.display = "none";
-       
+        sidebar.hide();
     }
     tablinks = document.getElementsByClassName("tablinks");
     for (i = 0; i < tablinks.length; i++) {
@@ -249,6 +250,86 @@ function opentab(evt, tabname) {
 
 }
 
+
+
+
+
+function info(e) {
+
+    let layer = e.target;
+    // console.log(layer);
+    let lineinfo = "";
+    let table = "<table class='table table-striped table-bordered table-sm' style='margin-bottom: 0px;'>";
+    let hiddenProps = ["styleUrl", "styleHash", "FILLOPACITY", "fillopacity", "styleMapHash", "stroke", "strokeopacity", "stroke-opacity",
+        "stroke-width", "opacity", "fill", "fill-opacity", "icon", "scale", "coordTimes", "_id_", "areaValue", "AREAVALUE_UOM",
+        "AREAVALUE_VOID", "BEGINLIFESPANVERSION", "BEGINLIFESPANVERSION_VOID", "ENDLIFESPANVERSION", "ENDLIFESPANVERSION_VOID", "ID_LOCALID",
+        "ID_VERSIONID", "ID_VERSIONID_VOID", "VALIDFROM", "VALIDFROM_VOID", "VALIDTO", "VALIDTO_VOID", "BASPROPUNIT_VOID", "ZONING", "ZONING_VOID",
+        "ADMUNIT_VOID", "SHAPE.STAREA()", "SHAPE.STLENGTH()", "IFCID", "OBJECTID", "ENDLIFESPANVERSION_VOID", "ENDLIFESPANVERSION", "BEGINLIFESPANVERSION_VOID",
+        "BEGINLIFESPANVERSION", "SHAPE.STArea()", "SHAPE.STLength()", "id_versionId_void", "id_versionId", "endLifespanVersion_void",
+        "endLifespanVersion", "beginLifespanVersion_void", "beginLifespanVersion", "basPropUnit_void", "areaValue_uom", "zoning_void", "zoning",
+        "validTo_void", "validTo", "validFrom_void", "validFrom", "areaValue_void", "admUnit_void", "id_namespace", "id_localId", "admUnit", "gis_GIS__2", "gis_GIS__1", "gis_GIS_dc"
+    ];
+    for (let k in layer.feature.properties) {
+        if (layer.feature.properties.hasOwnProperty(k) && hiddenProps.indexOf(k) == -1) {
+            let v = String(layer.feature.properties[k]);
+
+            table += "<tr><th>" + k.toUpperCase() + "</th><td>" + layer.feature.properties[k] + "</td></tr>";
+            lineinfo +=
+                "<b>" +
+                k.toUpperCase() +
+                "</b><br>" +
+                layer.feature.properties[k] +
+                "<br>" +
+                '<hr style="margin:5px 0px;  border-style: dotted; border-color: forestgreen;">';
+        }
+    }
+    table += "</table>";
+
+    mapinfo.innerHTML =
+        lineinfo;
+    individualinfoarray = [];
+    individualinfoarray.push(layer.feature);
+
+    sidebar.show(); //sidebarToggle.state('close-sidebar');
+}
+/*i changed feaure to feature*/
+
+function updateinfo(feature, layer) {
+
+    feature.properties["_id_"] = L.Util.stamp(layer);
+
+    mapinfo.innerHTML = "";
+    oms.addMarker(layer);
+    quadtree.add(layer);
+    layer.on("click", function(e) {
+
+        }),
+        layer.on({
+            click: info,
+            dblclick: info,
+            mousedown: info // mouseover: info
+            //load: quadtree.add(layer)
+        });
+} //////////////////////////////////update info function/////////////////////
+///////////////////updateinfo normal markers////////////
+
+function updateinfonormalmakrer(feature, layer) {
+    feature.properties["_id_"] = L.Util.stamp(layer);
+
+    mapinfo.innerHTML = "";
+    omssecond.addMarker(layer);
+    quadtree.add(layer);
+    layer.on("click", function(e) {
+            map.invalidateSize();
+        }),
+        layer.on({
+            click: info,
+            dblclick: info,
+            mousedown: info // mouseover: info
+            //load: quadtree.add(layer)
+        });
+} ///////////////////updateinfo normal markers////////////
+/////////////////updateinfo sites /////////////////////////
 
 
 
@@ -287,7 +368,6 @@ let maploadcallBack = function maploadcallBack() {
 
     $("#identifeatures").show();
     $("#closebuttonidentify, #identifyaccordion, #countfeatures,  #identifyswitches").show();
-	       document.getElementById("countfeatures").innerHTML = "click map to uncover features";
     identifycontrol.state("hide-identify");
     choosespatialquery();
 
@@ -296,10 +376,9 @@ let maploadcallBack = function maploadcallBack() {
 
 
 $("#identifybtn").click(function(){
-	destroyanalysis();
+	
    $("#identifeatures").show();
     $("#closebuttonidentify, #identifyaccordion, #countfeatures,  #identifyswitches").show();
-	       document.getElementById("countfeatures").innerHTML = "click map to uncover features";
     identifycontrol.state("hide-identify");
     choosespatialquery();
 })
@@ -328,10 +407,7 @@ var identifycontrol = new L.easyButton({
             title: "Spatial Query",
             onClick: function onClick(btn, map) {
 
-destroyanalysis();
- let legend = document.getElementById("countfeatures");
-               
-    document.getElementById("countfeatures").innerHTML = "click map to uncover features";
+
                 map.addLayer(bridgelayer);
 
                 btn.state("hide-identify");
@@ -382,7 +458,7 @@ destroyanalysis();
                 closeidentify()
 
                 map.removeLayer(bridgelayer);
-destroyanalysis();
+
             }
         }
     ],
@@ -390,7 +466,7 @@ destroyanalysis();
 }).addTo(map);
 
 
-$("#identifycontrolid").hide();
+
 
 $(function() {
     let icons = {
@@ -432,8 +508,6 @@ function choosespatialquery() {
 
     $("#querycheckboxmenuaccordion").hide();
    overpassquery = overpassquery();
-   
-    document.getElementById("countfeatures").innerHTML = "click map to uncover features";
 }
 
 
@@ -458,97 +532,51 @@ function pinlayer(layer, name) {
         },
         onEachFeature: function(feature, layer) {
             feature.properties["_id_"] = L.Util.stamp(layer);
-			
-			
-			
-				 if(layer.feature.geometry.type === "Polygon"){	
-		
-		   layer.setStyle({
-                        color: "brown",
-                        //fillOpacity: 0.2
-                    })
-		}
-		
-		
-			else if((feature.geometry.type === "Multiline") || (feature.geometry.type === "LineString")){	
-		
-		   layer.setStyle({
-                        color: "black",
-                        //fillOpacity: 0.2
-                    })
-		}
-		
-		
-		
-			//////////////////////////////
-           
-			if(	feature.properties.tags){
- 		let popupContent ="";	
-			p = layer.feature.properties;
-            index = p.index;
-          
-            popupContent = popupContent + "<dt>@id</dt><dd>" + feature.properties.type + "/" + feature.properties.id + "</dd>";
-            let keys = Object.keys(feature.properties.tags);
-            keys.forEach(function(key) {
-                popupContent = popupContent + "<dt>" + key + "</dt><dd>" + feature.properties.tags[key] + "</dd>";
-            });
-            popupContent = popupContent + "</dl>"
-           
-			
-			 layer.on('mouseover', function() {
+            if (feature.geometry.type === 'Polygon') {
 
-            layer.bindTooltip(popupContent, {
-                direction: 'auto',
-                sticky: true,
-            }).openTooltip();
-        })
-			
-			layer.on("click", function(){
-				
-				 layer.bindPopup(popupContent).openPopup();
-				
-			});
-			
-			}
-			else
-				
-				{
-					
-				let popupContent ="";	
-				
-    for (var k in layer.feature.properties) {
-        if (layer.feature.properties.hasOwnProperty(k)) {
-            var v = String(layer.feature.properties[k]);
+                layer.on('mouseover', function(e) {
+                    layer.bindTooltip("" + feature.properties.index + "", {
+                        direction: 'auto',
+                        sticky: true,
+                    }).openTooltip();
+                })
+            } else if (feature.geometry.type === "Point") {
 
+                layer.on('mouseover', function(e) {
+                    layer.bindTooltip("" + feature.properties.index + "", {
+                        direction: 'auto',
+                        sticky: true,
+                    }).openTooltip();
+                })
+            } else {
+                let lineinfo = "";
+                let hiddenProps = ["styleUrl"];
+                for (let k in feature.properties) {
+                    if (layer.feature.properties.hasOwnProperty(k) && hiddenProps.indexOf(k) == -1) {
+                        let v = String(feature.properties[k]);
+                        lineinfo +=
+                            "<b>" +
+                            k +
+                            "</b><br>" +
+                            layer.feature.properties[k] +
+                            "<br>" +
+                            '<hr style="margin:5px 0px;  border-style: dotted; border-color: forestgreen;">';
 
-            //popupContent += "<tr><th>" + k.toUpperCase() + "</th><td>" + layer.feature.properties[k] + "</td></tr>";
-            popupContent +=
-                "<b>" +
-                k.toUpperCase() +
-                "</b><br>" +
-                layer.feature.properties[k] +
-                "<br>" +
-                '<hr style="margin:5px 0px;  border-style: dotted; border-color: forestgreen;">';
-        }
-    }
-		layer.on("click", function(){
-				
-				 layer.bindPopup(popupContent).openPopup();
-				
-			});
- 
-				}
-					
+                    }
+                }
 
+                layer.on('click', function(e) {
+                    layer.bindPopup("" + lineinfo + "", {
+                        direction: 'auto',
+                        sticky: false,
+                    }).openPopup();
+                    console.log(layer);
+                })
+
+            }
 
         },
-		
-		
-		
         pointToLayer: function(feature, latlng) {
-			
-		if(feature.geometry.type === "Point"){	
-		
             return L.circleMarker(latlng, {
                 //renderer: myRenderer,
                 radius: 6,
@@ -563,10 +591,9 @@ function pinlayer(layer, name) {
 
 
             })
-		}
-	
         }
-		
+
+
     }).addTo(map);
 
     console.log("layername after", layername);
@@ -574,7 +601,7 @@ function pinlayer(layer, name) {
     name = name + layername._leaflet_id;
     addLayertolist(layername, name);
     map.addLayer(layername);
-    //layersarray.push(name);
+    layersarray.push(name);
     randomlayer.addLayer(layername);
 
 
@@ -595,6 +622,7 @@ overpassquery = function overpassquery() {
 
     if (overpassqueryswitch == true) {
 
+
         overpassbound.on("click", function(e) {
             $("#identifeatures").show();
             $("#identifyaccordion").accordion("activate", false);
@@ -610,7 +638,7 @@ overpassquery = function overpassquery() {
             map.invalidateSize();
             $("#identifeatures").show();
             $("#identifyaccordion").accordion("activate", false);
-            document.getElementById("countfeatures").innerHTML = "Processing";
+            document.getElementById("countfeatures").innerHTML = "";
             $("#toolbar li").remove();
             hideSpinner();
             showSpinner();
@@ -662,6 +690,7 @@ overpassquery = function overpassquery() {
             overpassApiUrl = buildOverpassApiUrl(map, queryTextfieldValue);
             console.log(overpassApiUrl);
 
+
             $osmrequest = $.ajax({
                 url: overpassApiUrl,
                 type: 'GET',
@@ -689,33 +718,7 @@ overpassquery = function overpassquery() {
 
                     if (selPts[0].length > 0) {
                         $("#countfeatures").append("<span id ='pinlayerosm' > &emsp;<i class='fa fa-map-pin' aria-hidden='true' title='create a new layer from your query'></i></span>");
-                        let value = queryTextfieldValue;
-				
-						
-        swal({
-            title: "!!!!",
-            text: "Do you want to Pin the Layer and analyse it?",
-            icon: "info",
-            buttons: ["cancel", "Pin the Layer"],
-            dangerMode: true
-        }).then(function(isConfirm) {
-            if (isConfirm) {
-               // destroyanalysis()
-         
-		 pinlayer(resultAsGeojson.features, value);
-		 $("#spatialanalysisbtn").trigger("click");
-		 
-            } else {
-
-            }
-        }); //swal({title: "!!!!",
-						
-						
-						
-						
-						
-						
-						
+                        let value = 'pinlayerosm';
                         $("#pinlayerosm").click(function() {
                             pinlayer(resultAsGeojson.features, value);
                             swal("the layer is pinned")
@@ -766,7 +769,12 @@ let bridgelayer = new L.geoJson(null, {
 
     pointToLayer: function pointToLayer(feature, latlng) {
 
+
+
+
         if (feature && feature.properties.hasOwnProperty("tags")) {
+
+
 
             let keys = Object.keys(feature && feature.properties.tags);
             keys.forEach(function(key) {
@@ -808,6 +816,8 @@ let bridgelayer = new L.geoJson(null, {
 
                 });
 
+
+
             } else if (feature && feature.geometry.type === "Polygon") {
                 let keys = Object.keys(feature && feature.properties.tags);
                 keys.forEach(function(key) {
@@ -817,6 +827,9 @@ let bridgelayer = new L.geoJson(null, {
                 });
 
             }
+
+
+
 
         } else if (Object.values(feature.properties).includes("null")) {
             let toponymicon = L.icon({
@@ -1016,7 +1029,10 @@ let bridgelayer = new L.geoJson(null, {
 
         }
 
-    
+        layer.on({
+            click: info
+        }); 
+ 
         layer.on("dblclick", function() {
             //layer.bindPopup(popupContent);
             identifypopup.openPopup();
@@ -1029,11 +1045,11 @@ let bridgelayer = new L.geoJson(null, {
 
 
 
-/////////// analysis functions /////////////////
+///////////turf analysis functions /////////////////
 
 
 function createradiomenu() {
-   document.getElementById("spatialanalysis").style.display = "none";
+ $("#leftpanel").show();
     destroyanalysis();
     closeidentify();
     $("#closebuttonidentify").show();
@@ -1042,12 +1058,12 @@ function createradiomenu() {
     $("#countfeatures").html("Choose Layer to Analyze");
 
     layersarray.forEach(function(item, index) {
-        //console.log(item);
-        $("#leftpanel").show();
-        var values = item;
-        var confirmbutton = document.createElement("button");
+        console.log(item);
+
+        let values = item;
+        let confirmbutton = document.createElement("button");
         confirmbutton.textContent = "Confirm";
-        var queryel = document.createElement("INPUT");
+        let queryel = document.createElement("INPUT");
         queryel.setAttribute("type", "radio");
         queryel.setAttribute('style', 'margin-left: 8px!important;');
         //queryel.type = "checkbox";
@@ -1055,19 +1071,29 @@ function createradiomenu() {
         queryel.id = "layerid";
         queryel.value = values;
         queryel.textContent = "";
-        var hr = document.createElement('hr');
-        var label = document.createElement('span');
+        let hr = document.createElement('hr');
+        let label = document.createElement('span');
         label.htmlFor = "layerid";
         label.id = "labellayerid";
         label.appendChild(document.createTextNode(values));
-        var overall = document.createElement("div");
+        let overall = document.createElement("div");
+		
+
+		
+		
         overall.id = "toolbarlayerdiv";
         overall.appendChild(hr);
         overall.appendChild(label);
         overall.appendChild(queryel);
-        var selectdiv = document.getElementById('toolbar');
+        let selectdiv = document.getElementById('toolbar');
         selectdiv.appendChild(overall);
-
+		  $("#toolbarlayerdiv")
+        .fadeOut(150)
+        .fadeIn(150)
+		 .fadeOut(150)
+        .fadeIn(150)
+		 .fadeOut(150)
+        .fadeIn(150);
 
     })
 
@@ -1076,13 +1102,14 @@ function createradiomenu() {
 
 
 
+
 function choosepointlayer() {
+
+	  $(".closetabs").trigger("click");
     createradiomenu()
     let value;
-	
-	$("#countfeatures").append("<span class='shorticon' style='background: url(./images/cry.png) no-repeat;float: left;width: 40px;height: 30px;margin-top: -6px; '></span>");
-	
-    $("#leftpanel input").on('change', function(e) {
+	 $("#leftpanel").show();
+    $("#leftpanel input").change(function() {
         //value= $("input:radio:checked").val();
 
         value = $('input:checked', '#leftpanel').val()
@@ -1096,9 +1123,9 @@ function choosepointlayer() {
         }).then(function(isConfirm) {
             if (isConfirm) {
                 destroyanalysis()
-                value = null;
+
             } else {
-                //console.log("value", value);
+                console.log("value", value);
                 createturffeaturecollection(value);
                 value = null;
                 $("#toolbar #toolbarlayerdiv").empty();
@@ -1117,23 +1144,16 @@ function choosepointlayer() {
 }
 
 
+
+
 function createturffeaturecollection(sentlayer) {
-
-
     differencemarkerarray = [];
     let layer;
     let analysedlayer;
     if (sentlayer.includes('pinlayer')) {
-
-        //layerid= sentlayer.replace( /^\D+/g, '');
-        layerid = sentlayer.replace(/(^.*\[|\].*$)/g, '');
-
-
+        let layerid = sentlayer.replace(/^\D+/g, '');
         console.log(layerid);
-        console.log("overlayLayers[layerid]", overlayLayers[layerid]);
-
-        //layer = randomlayer.getLayer(layerid);
-        layer = overlayLayers[layerid];
+        layer = randomlayer.getLayer(layerid);
         analysedlayer = layer.toGeoJSON();
         console.log("toGeoJSON()", layer);
 
@@ -1148,22 +1168,19 @@ function createturffeaturecollection(sentlayer) {
 
     try {
 
-        var features = turf.featureCollection(analysedlayer.features);
+        let features = turf.featureCollection(analysedlayer.features);
         console.log("features", features);
         differencemarker = new L.Marker(null, {
             draggable: true
         });
         differencemarker.setLatLng(map.getCenter())
-        differencemarker.addTo(map).bindPopup("drag marker to find its proximity to the points of your selected layer").openPopup();
-        var differencemarkerarray = [differencemarker._latlng.lng, differencemarker._latlng.lat];
-        var turfpointfinal = turf.point([differencemarker._latlng.lng, differencemarker._latlng.lat], {
+        differencemarker.addTo(map).bindPopup("drag marker to find its proximity to your selected features").openPopup();
+        let differencemarkerarray = [differencemarker._latlng.lng, differencemarker._latlng.lat];
+        let turfpointfinal = turf.point([differencemarker._latlng.lng, differencemarker._latlng.lat], {
             "marker-color": "#0F0"
         });
-        var nearest = turf.nearestPoint(turfpointfinal, features);
+        let nearest = turf.nearestPoint(turfpointfinal, features);
         nearestfunction(features, differencemarkerarray)
-
-        map.flyTo([map.getCenter().lat, map.getCenter().lng], 14)
-
         differencemarker.on("dragend", function(event) {
             //differencemarker.bindPopup("drag marker around to see the proximity of features to it").openPopup()
             differencemarkerarray = [differencemarker._latlng.lng, differencemarker._latlng.lat];
@@ -1190,6 +1207,7 @@ function createturffeaturecollection(sentlayer) {
 
 
 function nearestfunction(features, turfpoint) {
+
     turffeatures = null;
     $("#toolbar ul").html("");
     if (pointfordistance != undefined) {
@@ -1198,7 +1216,7 @@ function nearestfunction(features, turfpoint) {
     if (distancepolyline != undefined) {
         map.removeLayer(distancepolyline);
     }
-    var redIcon = new L.Icon({
+    let redIcon = new L.Icon({
         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
         iconSize: [25, 41],
@@ -1218,11 +1236,12 @@ function nearestfunction(features, turfpoint) {
 
 
     turffeatures = features;
-    var turfpointfinal = turf.point(turfpoint, {
+    let turfpointfinal = turf.point(turfpoint, {
         "marker-color": "#0F0"
     });
-    var nearest = turf.nearestPoint(turfpointfinal, turffeatures);
+    let nearest = turf.nearestPoint(turfpointfinal, turffeatures);
     pointfordistance.addData(nearest);
+
 
     distancepolyline = L.polyline([
         [turfpoint[1], turfpoint[0]],
@@ -1233,28 +1252,24 @@ function nearestfunction(features, turfpoint) {
         opacity: 1,
         dashArray: "5, 3"
     }).addTo(map);
-    var from = turf.point([turfpoint[1], turfpoint[0]]);
-    var to = turf.point([nearest.geometry.coordinates[1], nearest.geometry.coordinates[0]]);
-    var options = {
+    let from = turf.point([turfpoint[1], turfpoint[0]]);
+    let to = turf.point([nearest.geometry.coordinates[1], nearest.geometry.coordinates[0]]);
+    let options = {
         units: 'kilometers'
     };
-    var distance = turf.distance(from, to, options);
+    let distance = turf.distance(from, to, options);
     //var distance = turfpoint.distanceTo(turf.getCoord(nearest))/1000;
     //$("#toolbar ul").html(" "+nearest.properties.index+" Position  is "+distance.toFixed(3)+" km away ");
-    var $listItem = $("<li>").html(" " + nearest.properties.index + " Position  is " + distance.toFixed(3) + " km away ").appendTo("#toolbar ul");
+    let $listItem = $("<li>").html(" " + nearest.properties.index + " Position  is " + distance.toFixed(3) + " km away ").appendTo("#toolbar ul");
     distancepolyline.bindTooltip("" + distance.toFixed(3) + " km away ", {
         direction: 'auto',
         sticky: true,
     })
-
     pointfordistance.bindPopup(" " + nearest.properties.index + " Position  is " + distance.toFixed(3) + " km away ", {
         direction: 'auto',
         sticky: true,
-    })
-    //.openPopup()
-    ;
+    }).openPopup();
 
-    //map.fitBounds(distancepolyline.getBounds());
 
 }
 
@@ -1264,7 +1279,6 @@ function nearestfunction(features, turfpoint) {
 function destroyanalysis() {
     try {
 
-        $("#heatmapdivpanel").hide();
         differencemarkerarray = [];
         $("#closebuttonidentify").hide();
         if (pointfordistance != undefined) {
@@ -1296,7 +1310,6 @@ function destroyanalysis() {
         voronoiPolygons = null;
         voronoipointTempLayer = null;
         $("#toolbar #toolbarlayerdiv").empty();
-        $("#toolbar ul").empty();
         $("#toolbar li").remove();
         $("#leftpanel").hide();
         $("#countfeatures").html("");
@@ -1304,26 +1317,12 @@ function destroyanalysis() {
 
         $("#toolbar #toolbarlayerdiv").remove();
         $("#leftpanel input").empty();
-        $("#leftpanel input").remove();
-
-        $("#leftpanel #layerid").empty();
-        $("#leftpanel #labellayerid").empty();
-        $("#leftpanel #layerid").remove();
-        $("#leftpanel #labellayerid").remove();
-
-        if (heatlayer != undefined) {
-            map.removeLayer(heatlayer);
-        }
-
 
         if (routingcontrol != undefined) {
 
             map.removeControl(routingcontrol);
             routingcontrol = null;
         }
-        //bbox = null;
-        //bounds= null;
-		  if (router != undefined) {
         router = null;
 
         totalDistance = null;
@@ -1340,12 +1339,9 @@ function destroyanalysis() {
         controlpoint2 = null;
         network = null;
         router = null;
-		  }
-
     } catch (error)
 
     {
-
         console.log("destroy analysis error", error);
     }
 }
@@ -1359,12 +1355,9 @@ function voronoi(sentlayer) {
 
     let layer;
     if (sentlayer.includes('pinlayer')) {
-        //let layerid= sentlayer.replace( /^\D+/g, '');
-        let layerid = sentlayer.replace(/(^.*\[|\].*$)/g, '');
-
+        let layerid = sentlayer.replace(/^\D+/g, '');
         console.log(layerid);
-        //layer = randomlayer.getLayer(layerid);
-        layer = overlayLayers[layerid];
+        layer = randomlayer.getLayer(layerid);
         voronoigeojsoned = layer.toGeoJSON();
 
     } else {
@@ -1387,19 +1380,19 @@ function voronoi(sentlayer) {
 
     //minX, minY, maxX, maxY
 
-    var layerWEST = layer.getBounds().getWest();
-    var layerEAST = layer.getBounds().getEast();
-    var layerNORTH = layer.getBounds().getNorth();
-    var layerSOUTH = layer.getBounds().getSouth();
-    var WEST = map.getBounds().getWest();
-    var EAST = map.getBounds().getEast();
-    var NORTH = map.getBounds().getNorth();
-    var SOUTH = map.getBounds().getSouth();
+    let layerWEST = layer.getBounds().getWest();
+    let layerEAST = layer.getBounds().getEast();
+    let layerNORTH = layer.getBounds().getNorth();
+    let layerSOUTH = layer.getBounds().getSouth();
+    let WEST = map.getBounds().getWest();
+    let EAST = map.getBounds().getEast();
+    let NORTH = map.getBounds().getNorth();
+    let SOUTH = map.getBounds().getSouth();
 
     layer = null;
 
 
-    var boundoptions;
+    let boundoptions;
 
     swal({
         title: "!!!!",
@@ -1437,69 +1430,32 @@ function voronoi(sentlayer) {
                 hideSpinner();
                 console.log(error);
                 if (error.toString().indexOf('must be a Point')) {
-                    swal("Wrong layer.This layer does not consist of Points. The non points were converted to their centroid point geometry");
-            
-          var centroids = {
-                      type: 'FeatureCollection',
-                      features: voronoigeojsoned.features.map(function(feature) {
-                          return {
-                              type: 'Feature',
-                              properties: feature.properties,
-                              geometry: turf.centroid(feature).geometry}})};	   
-console.log("centroids",centroids);
-
-//voronoifeatures = null;
-//voronoiPolygons = null;
-
-voronoigeojsoned = centroids;
-voronoifeatures = turf.featureCollection(centroids.features, boundoptions);
-voronoiPolygons = turf.voronoi(voronoifeatures, boundoptions);
-    } // if (error.toString().indexOf('must be a Point')) {
-
-
-
+                    swal("Wrong layer.This layer does not consist of Points");
+                }
 
 
             }
-			
-			finally
-			{
-			
-			
-			
-			
             voronoifeaturegroup.clearLayers();
             voronoipointLayer.clearLayers();
             voronoipointTempLayer = new L.geoJSON(voronoigeojsoned.features);
 
-if(voronoiPolygons.features && Object.keys(voronoiPolygons.features).length > 4000)
-{
-	
-	swal("!!You just run the voronoi function in a vast area.Please run the function for a confined area.(zoom in the specific area you want to analyse and choose the option --Current map bounds--)");
-	hideSpinner();
-	destroyanalysis();
-	return;
-}
-
-           //console.log("voronoifeatures.length", Object.keys(voronoiPolygons.features).length);
+            console.log("voronoiPolygons.length", voronoiPolygons.features.length);
 
             try {
 
-
-
-
                 turf.featureEach(voronoiPolygons, function(currentFeature, featureIndex) {
 
-                    //console.log("featureIndex.length",featureIndex);
+                    //console.log(featureIndex);
                     if (currentFeature && currentFeature.geometry && currentFeature.geometry.type === "Polygon") {
-                        var flipped = turf.flip(currentFeature);
+                        let flipped = turf.flip(currentFeature);
 
-                        var polygon = L.polygon(flipped.geometry.coordinates, {
+                        let polygon = L.polygon(flipped.geometry.coordinates, {
                             weight: 4,
-                          fillOpacity: 0.07,
-                          color: 'orange',
-                          dashArray: '1',
-                           fillColor: '#0000FF'
+                            fillOpacity: 0.07,
+                            color: 'black',
+                            dashArray: '1',
+                            fillColor: '#0000FF',
+                            pane: "topoPane"
                         }).addTo(voronoifeaturegroup);
 
                     }
@@ -1512,43 +1468,19 @@ if(voronoiPolygons.features && Object.keys(voronoiPolygons.features).length > 40
                 swal("An error occured");
             }
 
-
-
-
-           
-            var ptsWithin = turf.within(voronoipointTempLayer.toGeoJSON(), voronoifeaturegroup.toGeoJSON());
-            voronoipointLayer.addData(ptsWithin);
-
-
-            var voronoibounds = voronoifeaturegroup.getBounds();
-
-
-
-            if (!voronoibounds.isValid()) {
-                hideSpinner()
-                swal("Bounds are not valid");
-
-            } else
-
-            {
-                map.fitBounds(voronoifeaturegroup.getBounds());
-            }
-
             ptsWithin = null;
-
+            ptsWithin = turf.within(voronoipointTempLayer.toGeoJSON(), voronoifeaturegroup.toGeoJSON());
+            voronoipointLayer.addData(ptsWithin);
+            map.fitBounds(voronoifeaturegroup.getBounds());
+            ptsWithin = null;
             $("#countfeatures").html('create a new layer');
             $("#countfeatures").append("<span id ='pinlayervoronoi' > &emsp;<i class='fa fa-map-pin' aria-hidden='true' title='create a new layer'></i></span>");
             voronoifeaturegroup.addLayer(voronoipointLayer);
-            var value = 'pinlayervoronoi';
-
-
- 
-
+            let value = 'pinlayervoronoi';
             $("#pinlayervoronoi").click(function() {
 
                 map.flyTo([map.getCenter().lat, map.getCenter().lng], 13)
-
-                var temp;
+                let temp;
                 temp = voronoifeaturegroup.toGeoJSON();
                 pinlayer(temp, value);
                 swal("the layer is pinned")
@@ -1558,8 +1490,6 @@ if(voronoiPolygons.features && Object.keys(voronoiPolygons.features).length > 40
                 voronoigeojsoned = null;
                 destroyanalysis()
             });
-			
-			}
 
 
 
@@ -1569,20 +1499,17 @@ if(voronoiPolygons.features && Object.keys(voronoiPolygons.features).length > 40
     }); //swal({title: "!!!!",
 
 
-
-
 }
 
 
 
 
-
 function choosevoronoilayer() {
+	  $(".closetabs").trigger("click");
+	  
     createradiomenu()
-	
-	$("#countfeatures").append("<span class='voronoiicon' style='background: url(./images/voronoi-diagram.png) no-repeat;float: left;width: 40px;height: 30px;margin-top:-6px; '></span>");
-	
-    $("#leftpanel input").on('change', function(e) {
+	 $("#leftpanel").show();
+    $("#leftpanel input").change(function() {
         //let value= $("input:radio:checked").val();
 
         let value = $('input:checked', '#leftpanel').val()
@@ -1596,17 +1523,16 @@ function choosevoronoilayer() {
             dangerMode: true
         }).then(function(isConfirm) {
             if (isConfirm) {
-                //console.log("value", value);
+                console.log("value", value);
                 voronoi(value)
                 $("#toolbar #toolbarlayerdiv").empty();
                 //$("#leftpanel").hide();
                 $("#countfeatures").html("Results");
-                value = null;
+
 
             } else {
 
-                destroyanalysis();
-                value = null;
+                destroyanalysis()
             }
         }); //swal({title: "!!!!",
 
@@ -1621,11 +1547,12 @@ function choosevoronoilayer() {
 function initializenetwork()
 
 {
+	$(".closetabs").trigger("click");
     destroyanalysis()
     createradiomenu()
-	$("#countfeatures").append("<span style='float:left;'><i class='fas fa-route'></i>&emsp;</span>&emsp; ");
     let value;
-    $("#leftpanel input").on('change', function(e) {
+	$("#leftpanel").show();
+    $("#leftpanel input").change(function() {
         //value = $("input:radio:checked").val();
         value = $('input:checked', '#leftpanel').val();
 
@@ -1642,12 +1569,11 @@ function initializenetwork()
                 $("#toolbar #toolbarlayerdiv").empty();
                 //$("#leftpanel").hide();
                 $("#countfeatures").html("Results");
-                //console.log("value", value);
+                console.log("value", value);
                 initializenetworklayer(value)
                 value = null;
             } else {
                 destroyanalysis()
-                value = null;
             }
         });
 
@@ -1663,11 +1589,9 @@ function initializenetworklayer(sentlayer) {
     let layer;
     let cleanedlayer;
     if (sentlayer.includes('pinlayer')) {
-        //let layerid= sentlayer.replace( /^\D+/g, '');
-        let layerid = sentlayer.replace(/(^.*\[|\].*$)/g, '');
+        let layerid = sentlayer.replace(/^\D+/g, '');
         console.log(layerid);
-        //layer = randomlayer.getLayer(layerid);
-        layer = overlayLayers[layerid];
+        layer = randomlayer.getLayer(layerid);
         cleanedlayer = layer;
         layer = null;
     } else {
@@ -1699,63 +1623,59 @@ function initializenetworklayer(sentlayer) {
     */
 
 
-    var exportedlayer = {};
+    exportedlayer = {};
     exportedlayer.type = "FeatureCollection";
     exportedlayer.features = {};
     exportedlayer.features = cleanednetworkarray;
     initializenetworkanalysis(exportedlayer);
-    exportedlayer = null;
+
     cleanedlayer = null;
 }
 
 
 
 
-
-
 function initializenetworkanalysis(network) {
 
-    //console.log("network", network);
-   try{
-
-    $("#countfeatures").hide();
-    $("#leftpanel").hide();
-    $("#closebuttonidentify").hide();
-   // bbox = extent(network);
-
-    //bounds = L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
-    // map.fitBounds(bounds);
-    //L.rectangle(bounds, {color: 'orange', weight: 1, fillOpacity: 0.03, interactive: false}).addTo(map);
-    router = new rooter(network);
-
-    //console.log("router", router);
-
-
-    controlpoint1 = [router._points.features[0].geometry.coordinates[1], router._points.features[0].geometry.coordinates[0]];
-    controlpoint2 = [router._points.features[1].geometry.coordinates[1], router._points.features[1].geometry.coordinates[0]];
-
-
-    routingcontrol = L.Routing.control({
-        createMarker: function(i, wp) {
-            return L.marker(wp.latLng, {
-                icon: L.icon.glyph({
-                    prefix: '',
-                    glyph: String.fromCharCode(65 + i)
-                }),
-                draggable: true
-            })
-        },
-        router: router,
-        routeWhileDragging: true,
-        routeDragInterval: 100
-    }).addTo(map);
-
-    routingcontrol.setWaypoints([
-        controlpoint1,
-        controlpoint2,
-    ]);
-
+    console.log("network", network);
     try {
+
+        $("#countfeatures").hide();
+        $("#leftpanel").hide();
+        $("#closebuttonidentify").hide();
+        bbox = extent(network);
+
+        //bounds = L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
+        // map.fitBounds(bounds);
+        //L.rectangle(bounds, {color: 'orange', weight: 1, fillOpacity: 0.03, interactive: false}).addTo(map);
+        router = new rooter(network);
+
+        console.log("router", router);
+
+
+        controlpoint1 = [router._points.features[0].geometry.coordinates[1], router._points.features[0].geometry.coordinates[0]];
+        controlpoint2 = [router._points.features[1].geometry.coordinates[1], router._points.features[1].geometry.coordinates[0]];
+
+
+        routingcontrol = L.Routing.control({
+            createMarker: function(i, wp) {
+                return L.marker(wp.latLng, {
+                    icon: L.icon.glyph({
+                        prefix: '',
+                        glyph: String.fromCharCode(65 + i)
+                    }),
+                    draggable: true
+                })
+            },
+            router: router,
+            routeWhileDragging: true,
+            routeDragInterval: 100
+        }).addTo(map);
+
+        routingcontrol.setWaypoints([
+            controlpoint1,
+            controlpoint2,
+        ]);
 
         totalDistance = network.features.reduce(function(total, feature) {
             if (feature.geometry.type === 'LineString') {
@@ -1774,7 +1694,7 @@ function initializenetworkanalysis(network) {
         totalEdges = nodeNames.reduce(function(total, nodeName) {
             return total + Object.keys(graph[nodeName]).length;
         }, 0);
-		
+
         infoContainer = document.querySelector('#info-container');
 
         [
@@ -1783,77 +1703,59 @@ function initializenetworkanalysis(network) {
             ['Network Edges', totalEdges / 1000, 'k'] //,
             // ['Coordinates', router._pathFinder._points.features.length / 1000, 'k']
         ].forEach(function(info) {
-            var li = L.DomUtil.create('li', '', infoContainer);   
-            //console.log("info", info);
+            var li = L.DomUtil.create('li', '', infoContainer);
+
+            console.log("info", info);
             li.innerHTML = info[0] + ': <strong>' + Math.round(info[1]) + (info[2] ? '&nbsp;' + info[2] : '') + '</strong>';
 
 
         });
 
 
+        var vertices = router._pathFinder._graph.sourceVertices;
+        nodeNames.forEach(function(nodeName) {
+            node = graph[nodeName];
+            Object.keys(node).forEach(function(neighbor) {
+                c1 = vertices[nodeName];
+                c2 = vertices[neighbor];
+                //  L.polyline([[c1[1], c1[0]], [c2[1], c2[0]]], { weight: 1, opacity: 0.4, renderer: renderer, interactive: false })
+                //     .addTo(networkLayer)
+                //     .bringToBack();
+            });
+        });
+
     } catch (error)
 
     {
+
         console.log(error)
-    }
+        if (error.toString() === "TypeError: Cannot read properties of undefined (reading 'compactedVertices')") {
+            //swal("!!The layer contains points"); 
+        } else if (error.toString() === 'Error: Compacted graph contains no forks (topology has no intersections).') {
+            swal("!!Wrong layer.This layer is not a road network but a point Layer");
+        }
 
-    //var networkLayer = L.layerGroup();
-    var vertices = router._pathFinder._graph.sourceVertices;
-    //var  renderer = L.canvas().addTo(map);
-    nodeNames.forEach(function(nodeName) {
-        node = graph[nodeName];
-        Object.keys(node).forEach(function(neighbor) {
-            c1 = vertices[nodeName];
-            c2 = vertices[neighbor];
-            //  L.polyline([[c1[1], c1[0]], [c2[1], c2[0]]], { weight: 1, opacity: 0.4, renderer: renderer, interactive: false })
-            //     .addTo(networkLayer)
-            //     .bringToBack();
-        });
-    });
-	
-	
-//routingcontrol._line	
-	
-	
-	
-    }
-    catch(error)
 
-    {
 
-    console.log(error)
-     if  (error.toString() === "TypeError: Cannot read properties of undefined (reading 'compactedVertices')") {
-   swal("!!The layer contains points"); 
-     }
-     
-     else if (error.toString() === 'Error: Compacted graph contains no forks (topology has no intersections).') {
-    swal("!!Wrong layer.This layer is not a Line network but a point Layer"); 
-     }
-     
-     
-     
-    }
+    } finally {
+        totalDistance = null;
+        infoContainer = null;
+        networkLayer = null;
+        c1 = null;
+        c2 = null;
+        node = null;
+        graph = null;
+        nodeNames = null;
+        totalNodes = null;
+        totalEdges = null;
+        controlpoint1 = null;
+        controlpoint2 = null;
+        network = null;
+        router = null;
 
-    finally{
-    totalDistance= null;
-    infoContainer= null;
-    networkLayer= null;
-    c1= null;
-    c2= null;
-    node= null;
-    graph= null;
-    nodeNames= null;
-    totalNodes= null;
-    totalEdges	= null; 
-    controlpoint1 =null;
-    controlpoint2 =null;
-    network = null;
-     router = null;	
-    	
     }
 
 }
-
 
 
 
@@ -1928,7 +1830,6 @@ layername= data;
 
 try{
 	turf.voronoi(data, null);
-	//here the voronoi function is irrelevant but its being used to throw the error 
 }
 
 
@@ -1957,6 +1858,8 @@ console.log("centroids",centroids);
 
 finally 
 {
+	
+
 
     datafeatures = turf.featureCollection(data.features);
     var heatmapdata = turf.flip(datafeatures);
@@ -2123,7 +2026,6 @@ if ($("#map").length) {
 
 
 function closeidentify() {
-	
     map.removeLayer(bridgelayer);
     $("#identifeatures").hide();
     identifycontrol.state("show-identify");
@@ -2162,7 +2064,7 @@ function closeidentify() {
 
         }
 
-        document.getElementById("countfeatures").innerHTML = "click map to uncover features";
+        document.getElementById("countfeatures").innerHTML = "";
         $("#toolbar li").remove();
         identifycontrol.state("show-identify");
         $("#querycheckboxmenuaccordion").hide();
@@ -2188,7 +2090,7 @@ let closesidebarsss = document.querySelector(".closetabs");
 closesidebarsss.onclick = function() {
     document.getElementById("spatialanalysis").style.display = "none";
 	//$("#identifybtn").trigger("click");
- 
+    sidebar.hide();
 };
 
 
@@ -2197,10 +2099,9 @@ closesidebarsss.onclick = function() {
 
 let layerControl = new L.control.layers(null, overlayLayers, {
     position: "topright",
-    collapsed: false,
+    collapsed: true,
     autoZIndex: true
-}).addTo(map);
-
+});
 
 
 
@@ -2216,7 +2117,8 @@ function addLayertolist(layer, name, identifier) {
         <a class="layer-btn" href="#" title="Change opacity" onclick="changeOpacity(${L.Util.stamp(layer)}); return false;"><i class="fas fa-adjust"></i></a>
       </span>
 	  
-
+	
+		  
 
       <a class="layer-btn" href="#" title="Zoom to layer" onclick="zoomToLayer(${L.Util.stamp(layer)}); return false;"><i class="fas fa-expand-arrows-alt"></i></a>
       <a class="layer-btn" href="#" title="Remove layer" onclick="removeLayer(${L.Util.stamp(layer)}, '${name}'); return false;"><i class="fas fa-trash" style="color: red"></i></a>
@@ -2224,72 +2126,10 @@ function addLayertolist(layer, name, identifier) {
     <div style="clear: both;"></div>
   `);
 
-
-   // console.log(layer);
-
-
     if (layer instanceof L.GeoJSON) {
-        layersarray.push('pinlayer: ' + name + '[' + L.Util.stamp(layer) + ']');
-
+       // layersarray.push('pinlayer: ' + name + '[' + L.Util.stamp(layer) + ']');
     } else {
 
     }
-
-
     map.invalidateSize();
 }
-
-
-
-function zoomToLayer(id) {
-
-    var layer = overlayLayers[id];
-    if (!map.hasLayer(layer)) {
-        map.addLayer(overlayLayers[id]);
-    }
-    if (layer.options.bounds) {
-        map.fitBounds(layer.options.bounds);
-    } else {
-        map.fitBounds(layer.getBounds(), {
-            padding: [20, 20]
-        });
-    }
-    map.invalidateSize();
-}
-
-
-
-function removeLayer(id, name) {
-
-destroyanalysis();
-
-
-    var cfm = confirm(`Remove ${name}?`);
-    if (cfm == true) {
-        var layer = overlayLayers[id];
-        if (!map.hasLayer(layer)) {
-            map.addLayer(overlayLayers[id]);
-        }
-
-
-
-        //.replace( /(^.*\[|\].*$)/g, '' );
-       // console.log(id);
-        var index = layersarray.indexOf('pinlayer: ' + name + '[' + id + ']');
-
-        if (index > -1) {
-            layersarray.splice(index, 1);
-           // console.log(layersarray);
-        }
-        map.invalidateSize();
-    }
-    //console.log(layersarray);
-
-    map.removeLayer(layer);
-    layerControl.removeLayer(layer);
-
-
-
-
-}
-
