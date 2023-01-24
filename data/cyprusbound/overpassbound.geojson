@@ -1,8 +1,0 @@
-{
-"type": "FeatureCollection",
-"name": "Thu_Jul_21_2022_09_41_13_GMT0300_Eastern_European_Summer_Time",
-"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
-"features": [
-{ "type": "Feature", "properties": { "Name": "", "description": "", "attachment": "", "color": "" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ -152.706735, 84.197276 ], [ -156.082917, -59.953487 ], [ 192.101403, -60.170085 ], [ 188.850411, 44.347245 ], [ 189.282047, 84.778264 ], [ 101.351016, 84.528872 ], [ 23.624884, 84.420209 ], [ -152.706735, 84.197276 ] ] ] } }
-]
-}
